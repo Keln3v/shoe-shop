@@ -1,4 +1,5 @@
 """Работа с базой данных PostgreSQL: подключение и все запросы приложения."""
+
 from contextlib import contextmanager
 from datetime import date
 
@@ -9,7 +10,7 @@ from app.catalog_logic import DISCOUNT_REFERENCE_DATE, get_previous_month_range
 from app.config import load_database_settings
 from app.errors import DatabaseConnectionError, DatabaseError, OrderError
 
-CONNECTION_ERROR_MESSAGE = "Не удалось подключиться к базе данных."
+CONNECTION_ERROR_MESSAGE = "Не удалось подключиться к базе данных. Пожалуйста, проверьте настройки подключения в файле config.ini."
 QUERY_ERROR_MESSAGE = "Ошибка при выполнении запроса к базе данных. Повторите действие или обратитесь к администратору."
 
 
@@ -51,19 +52,20 @@ def get_user_by_login(login):
 
 
 def get_all_users():
-    return fetch_all(
-        """
+    return fetch_all("""
         SELECT user_id, last_name, first_name, patronymic
         FROM users
         ORDER BY last_name, first_name, patronymic
-        """
-    )
+        """)
 
 
 def get_categories():
-    return [row["category_name"] for row in fetch_all(
-        "SELECT category_name FROM categories ORDER BY category_name"
-    )]
+    return [
+        row["category_name"]
+        for row in fetch_all(
+            "SELECT category_name FROM categories ORDER BY category_name"
+        )
+    ]
 
 
 def get_catalog():
@@ -109,7 +111,9 @@ def get_product_sizes(product_id):
 def create_order(user_id, cart_items):
     """Оформляет заказ: списывает остатки и сохраняет позиции в одной транзакции."""
     if not cart_items:
-        raise OrderError("В заказе нет ни одной товарной позиции. Добавьте товары из каталога.")
+        raise OrderError(
+            "В заказе нет ни одной товарной позиции. Добавьте товары из каталога."
+        )
     with open_connection() as connection:
         with connection.cursor() as cursor:
             for item in cart_items:
@@ -136,14 +140,18 @@ def create_order(user_id, cart_items):
                     INSERT INTO order_items (order_id, stock_item_id, quantity, unit_price)
                     VALUES (%s, %s, %s, %s)
                     """,
-                    (order_id, item["stock_item_id"], item["quantity"], item["unit_price"]),
+                    (
+                        order_id,
+                        item["stock_item_id"],
+                        item["quantity"],
+                        item["unit_price"],
+                    ),
                 )
     return order_id
 
 
 def get_orders():
-    return fetch_all(
-        """
+    return fetch_all("""
         SELECT o.order_id, o.order_date,
                concat_ws(' ', u.last_name, u.first_name, u.patronymic) AS client_name,
                COALESCE(SUM(oi.quantity * oi.unit_price), 0) AS total_amount
@@ -152,8 +160,7 @@ def get_orders():
         LEFT JOIN order_items oi ON oi.order_id = o.order_id
         GROUP BY o.order_id, o.order_date, u.last_name, u.first_name, u.patronymic
         ORDER BY o.order_date DESC, o.order_id DESC
-        """
-    )
+        """)
 
 
 def get_order(order_id):
@@ -205,7 +212,10 @@ def delete_order(order_id):
 def update_order_date(order_id, new_date):
     with open_connection() as connection:
         with connection.cursor() as cursor:
-            cursor.execute("UPDATE orders SET order_date = %s WHERE order_id = %s", (new_date, order_id))
+            cursor.execute(
+                "UPDATE orders SET order_date = %s WHERE order_id = %s",
+                (new_date, order_id),
+            )
 
 
 def delete_order_item(order_item_id):
@@ -218,9 +228,13 @@ def delete_order_item(order_item_id):
             )
             row = cursor.fetchone()
             if row is None:
-                raise OrderError("Позиция заказа не найдена: возможно, она уже удалена. Обновите список.")
+                raise OrderError(
+                    "Позиция заказа не найдена: возможно, она уже удалена. Обновите список."
+                )
             order_id, stock_item_id, quantity = row
-            cursor.execute("SELECT COUNT(*) FROM order_items WHERE order_id = %s", (order_id,))
+            cursor.execute(
+                "SELECT COUNT(*) FROM order_items WHERE order_id = %s", (order_id,)
+            )
             if cursor.fetchone()[0] <= 1:
                 raise OrderError(
                     "Нельзя удалить единственную позицию заказа. "
@@ -230,4 +244,6 @@ def delete_order_item(order_item_id):
                 "UPDATE stock_items SET quantity = quantity + %s WHERE stock_item_id = %s",
                 (quantity, stock_item_id),
             )
-            cursor.execute("DELETE FROM order_items WHERE order_item_id = %s", (order_item_id,))
+            cursor.execute(
+                "DELETE FROM order_items WHERE order_item_id = %s", (order_item_id,)
+            )
