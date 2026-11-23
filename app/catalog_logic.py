@@ -33,7 +33,7 @@ def calculate_price_with_discount(price, has_orders_last_month):
 
 
 def get_stock_label(total_quantity):
-    return "много" if total_quantity > MANY_THRESHOLD else "мало"
+    return "Много в наличии" if total_quantity > MANY_THRESHOLD else "Мало в наличии"
 
 
 def is_low_stock(total_quantity):
