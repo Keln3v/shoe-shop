@@ -1,4 +1,5 @@
-"""Точка входа: приложение «Чудо Обувь» — система оформления заказов обуви."""
+"""Точка входа: приложение «Чудо Обувь» — система ОФОРМЛЕНИЯЯЯ заказов обуви."""
+
 import sys
 
 from PyQt5.QtWidgets import QApplication
@@ -12,7 +13,9 @@ def set_windows_app_id():
     try:
         import ctypes
 
-        ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID("chudo.obuv.shoeshop")
+        ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(
+            "chudo.obuv.shoeshop"
+        )
     except (AttributeError, OSError):
         pass
 
