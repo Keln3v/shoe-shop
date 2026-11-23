@@ -1,4 +1,5 @@
 """Бизнес-логика каталога: цена со скидкой, надпись о количестве, поиск, фильтр и сортировка."""
+
 from datetime import date, timedelta
 from decimal import Decimal, ROUND_HALF_UP
 
@@ -25,11 +26,13 @@ def calculate_price_with_discount(price, has_orders_last_month):
     if has_orders_last_month:
         return price
     discount_multiplier = Decimal(100 - DISCOUNT_PERCENT) / Decimal(100)
-    return (price * discount_multiplier).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+    return (price * discount_multiplier).quantize(
+        Decimal("0.01"), rounding=ROUND_HALF_UP
+    )
 
 
 def get_stock_label(total_quantity):
-    return "много" if total_quantity > 5 else "мало"
+    return "Много в наличии" if total_quantity > 5 else "Мало в наличии"
 
 
 def is_low_stock(total_quantity):
@@ -54,10 +57,15 @@ def filter_and_sort_products(products, search_text, category_name, sort_mode):
     search_text = search_text.strip().casefold()
     result = []
     for product in products:
-        if category_name != ALL_CATEGORIES and product["category_name"] != category_name:
+        if (
+            category_name != ALL_CATEGORIES
+            and product["category_name"] != category_name
+        ):
             continue
         if search_text:
-            haystack = (product["product_name"] + " " + product["description"]).casefold()
+            haystack = (
+                product["product_name"] + " " + product["description"]
+            ).casefold()
             if search_text not in haystack:
                 continue
         result.append(product)
